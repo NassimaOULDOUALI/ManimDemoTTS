@@ -1,14 +1,15 @@
 """
 s02_speech.py — Scène 2 : La parole humaine (~40s)
 ===================================================
-Niveau : débutant → intermédiaire
-Concepts : voix = fondamentale + harmoniques, F0, spectrogramme
+v2 (branche vivatech_v2) :
+  - Slide 3 redessinée : cartes KPI avec texte qui ne déborde pas
+    → texte multi-lignes, font_size réduit, padding explicite,
+      largeur/hauteur calculées pour contenir le contenu
+  - Reste de la scène inchangé
 
-Effets :
-  - Harmoniques qui s'additionnent visuellement (animation)
-  - Courbe F0 naturelle vs synthèse (comparaison dramatique)
-  - "Compression" du pitch synthétique (effet visuel choc)
-  - Définition prosody : pitch / volume / rate / breaks
+Contraintes Manim v0.20.1 :
+  - Pas de stroke_opacity= → .set_stroke(opacity=...)
+  - Pas d'aligned_edge=None dans .animate
 """
 
 from manim import *
@@ -18,18 +19,76 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from theme import *
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# HELPER : carte prosody propre, texte garanti dans le bg
+# ─────────────────────────────────────────────────────────────────────────────
+def prosody_card(
+    title_str: str,
+    line1_str: str,
+    line2_str: str,
+    color,
+    card_w: float = 3.2,
+    card_h: float = 2.15,
+    pad: float = 0.22,          # padding intérieur horizontal
+    title_fs: int = 22,
+    body_fs: int = 16,
+    sub_fs: int = 14,
+) -> VGroup:
+    """
+    Carte prosody auto-dimensionnée.
+    Le texte est wrappé manuellement et la hauteur de la carte
+    s'adapte si le contenu dépasse card_h.
+    """
+    inner_w = card_w - 2 * pad   # largeur utile pour le texte
+
+    # ── Textes ──────────────────────────────────────────────────────
+    head = T(title_str, font_size=title_fs, color=color, weight=BOLD)
+    l1   = T(line1_str, font_size=body_fs,  color=WHITE_TXT)
+    l2   = T(line2_str, font_size=sub_fs,   color=GREY)
+
+    # Forcer le texte à tenir dans inner_w
+    for mob in (head, l1, l2):
+        if mob.width > inner_w:
+            mob.scale(inner_w / mob.width)
+
+    content = VGroup(head, l1, l2).arrange(DOWN, aligned_edge=LEFT, buff=0.14)
+
+    # Hauteur effective = contenu + 2×padding vertical
+    effective_h = max(card_h, content.height + 2 * pad)
+
+    # ── Background ──────────────────────────────────────────────────
+    bg = RoundedRectangle(
+        corner_radius=0.16,
+        width=card_w,
+        height=effective_h,
+        fill_color=DARK_BOX,
+        fill_opacity=1,
+        stroke_color=color,
+        stroke_width=2.5,
+    )
+
+    # Centrer le contenu dans le bg (légèrement vers le haut pour équilibre optique)
+    content.move_to(bg.get_center())
+
+    return VGroup(bg, content)
+
+
+# =============================================================================
+# SCÈNE
+# =============================================================================
+
 class SceneSpeech(Scene):
     def construct(self):
 
-        # ==============================================================
+        # ══════════════════════════════════════════════════════════════
         # TITRE
-        # ==============================================================
+        # ══════════════════════════════════════════════════════════════
         title = section_title("The Human Voice").to_edge(UP, buff=0.5)
         self.play(FadeIn(title, shift=DOWN * 0.2), run_time=0.8)
 
-        # ==============================================================
+        # ══════════════════════════════════════════════════════════════
         # SLIDE 1 : Harmoniques qui s'additionnent
-        # ==============================================================
+        # ══════════════════════════════════════════════════════════════
         subtitle = T("Voice = fundamental frequency F₀ + harmonics",
                      font_size=26, color=GREY)
         subtitle.next_to(title, DOWN, buff=0.32)
@@ -42,12 +101,10 @@ class SceneSpeech(Scene):
 
         self.play(Create(ax), FadeIn(x_lbl), FadeIn(y_lbl), run_time=0.7)
 
-        # Harmoniques 1 à 4, chacune s'ajoute progressivement
         harm_colors = [CYAN, GOLD, GREEN, RED]
         harm_coeffs = [(1, 0.55), (2, 0.28), (3, 0.14), (4, 0.07)]
         F0 = 200
 
-        # Graphe cumulatif
         def cumulative(t, n_harmonics):
             return sum(
                 c * np.sin(2 * np.pi * k * F0 * t)
@@ -62,7 +119,6 @@ class SceneSpeech(Scene):
                         color=col, stroke_width=2.5)
             graphs.append(g)
 
-        # Labels harmoniques
         harm_labels = VGroup()
         for i, (col, (k, _)) in enumerate(zip(harm_colors, harm_coeffs)):
             lbl = T(f"+ harmonic {k}" if k > 1 else "Fundamental F₀",
@@ -71,7 +127,6 @@ class SceneSpeech(Scene):
         harm_labels.arrange(DOWN, aligned_edge=LEFT, buff=0.22)
         harm_labels.to_edge(RIGHT, buff=0.3).shift(DOWN * 0.5)
 
-        # Ajouter une harmonique à la fois
         current_graph = None
         for i, g in enumerate(graphs):
             if current_graph:
@@ -102,9 +157,9 @@ class SceneSpeech(Scene):
             run_time=0.8,
         )
 
-        # ==============================================================
-        # SLIDE 2 : F0 naturelle vs synthétique — l'écart dramatique
-        # ==============================================================
+        # ══════════════════════════════════════════════════════════════
+        # SLIDE 2 : F0 naturelle vs synthétique
+        # ══════════════════════════════════════════════════════════════
         subtitle2 = T("F₀ contour: Natural speech vs TTS", font_size=26, color=GREY)
         subtitle2.next_to(title, DOWN, buff=0.32)
         self.play(FadeIn(subtitle2), run_time=0.5)
@@ -116,12 +171,11 @@ class SceneSpeech(Scene):
 
         self.play(Create(ax2), FadeIn(x2_lbl), FadeIn(y2_lbl), run_time=0.7)
 
-        # Courbe naturelle — dynamique, expressive
         f0_nat = ax2.plot(f0_curve, x_range=[0.03, 0.97, 0.004],
                           color=CYAN, stroke_width=3)
-        # Courbe synthétique — plate et monotone
+
         def f0_synth(t):
-            return 140 + 8 * np.sin(2 * np.pi * 0.8 * t)  # quasi-plate
+            return 140 + 8 * np.sin(2 * np.pi * 0.8 * t)
 
         f0_syn = ax2.plot(f0_synth, x_range=[0, 1, 0.005],
                           color=RED, stroke_width=2.5)
@@ -137,7 +191,6 @@ class SceneSpeech(Scene):
         self.play(Create(f0_syn), FadeIn(lbl_syn), run_time=1.2)
         self.wait(0.5)
 
-        # Zone "compression" — met en valeur l'écart
         flat_zone = Rectangle(
             width=9.0, height=0.6,
             fill_color=RED, fill_opacity=0.10,
@@ -154,9 +207,9 @@ class SceneSpeech(Scene):
         self.play(FadeIn(flat_label, shift=UP * 0.1), run_time=0.5)
         self.wait(3.5)
 
-        # ==============================================================
-        # SLIDE 3 : Les 4 paramètres prosodiques — cartes animées
-        # ==============================================================
+        # ══════════════════════════════════════════════════════════════
+        # SLIDE 3 : Les 4 paramètres prosodiques — cartes redessinées
+        # ══════════════════════════════════════════════════════════════
         self.play(
             FadeOut(VGroup(ax2, f0_nat, f0_syn, x2_lbl, y2_lbl,
                            lbl_nat, lbl_syn, flat_zone, flat_label, subtitle2)),
@@ -165,48 +218,78 @@ class SceneSpeech(Scene):
 
         subtitle3 = T("Prosody = 4 controllable parameters",
                       font_size=28, color=WHITE_TXT, weight=BOLD)
-        subtitle3.next_to(title, DOWN, buff=0.35)
+        subtitle3.next_to(title, DOWN, buff=0.38)
         self.play(FadeIn(subtitle3), run_time=0.5)
 
+        # ── Données des 4 cartes ─────────────────────────────────────
+        # line2 découpée en segments courts pour éviter le débordement
         params = [
-            ("Pitch (F₀)", CYAN,
-             "Perceived height of voice", "Intonation · questions · emphasis"),
-            ("Volume", GOLD,
-             "Perceived intensity", "Prominence · emotional strength"),
-            ("Rate (Tempo)", GREEN,
-             "Speed of articulation", "Urgency · clarity · rhythm"),
-            ("Breaks (Pauses)", RED,
-             "Silences between phrases", "Structure · comprehension"),
+            (
+                "Pitch (F₀)", CYAN,
+                "Perceived height\nof voice",
+                "Intonation · questions\n· emphasis",
+            ),
+            (
+                "Volume", GOLD,
+                "Perceived intensity",
+                "Prominence\n· emotional strength",
+            ),
+            (
+                "Rate (Tempo)", GREEN,
+                "Speed of\narticulation",
+                "Urgency · clarity\n· rhythm",
+            ),
+            (
+                "Breaks (Pauses)", RED,
+                "Silences between\nphrases",
+                "Structure\n· comprehension",
+            ),
         ]
 
-        cards = VGroup()
-        for label, color, line1, line2 in params:
-            bg = RoundedRectangle(
-                corner_radius=0.15, width=2.9, height=1.85,
-                fill_color=DARK_BOX, fill_opacity=1,
-                stroke_color=color, stroke_width=2.5,
+        # ── Construire les cartes ────────────────────────────────────
+        cards = VGroup(*[
+            prosody_card(
+                title_str=p[0],
+                line1_str=p[2],
+                line2_str=p[3],
+                color=p[1],
+                card_w=3.1,
+                card_h=2.20,
+                pad=0.28,
+                title_fs=22,
+                body_fs=16,
+                sub_fs=14,
             )
-            head = T(label, font_size=23, color=color, weight=BOLD)
-            l1 = T(line1, font_size=17, color=WHITE_TXT)
-            l2 = T(line2, font_size=15, color=GREY)
-            content = VGroup(head, l1, l2).arrange(DOWN, aligned_edge=LEFT, buff=0.12)
-            content.move_to(bg)
-            cards.add(VGroup(bg, content))
+            for p in params
+        ])
 
-        cards.arrange(RIGHT, buff=0.28)
-        cards.next_to(subtitle3, DOWN, buff=0.6)
+        # Espacement horizontal serré mais lisible
+        cards.arrange(RIGHT, buff=0.22)
+        # Centrer verticalement sous le subtitle
+        cards.next_to(subtitle3, DOWN, buff=0.50)
 
+        # Si les cartes dépassent le frame, rescaler l'ensemble
+        frame_w = config.frame_width - 0.6
+        if cards.width > frame_w:
+            cards.scale(frame_w / cards.width)
+
+        # ── Apparition en cascade ────────────────────────────────────
         self.play(
             LaggedStart(
-                *[FadeIn(c, shift=UP * 0.25) for c in cards],
-                lag_ratio=0.22,
+                *[FadeIn(c, shift=UP * 0.22) for c in cards],
+                lag_ratio=0.20,
             ),
-            run_time=1.8,
+            run_time=1.6,
         )
-        # Pulse sur chaque carte
-        for c in cards:
-            self.play(Indicate(c[0], scale_factor=1.04, color=c[1][0].get_stroke_color()),
-                      run_time=0.35)
+
+        # Pulse léger sur chaque carte (Indicate sur le bg uniquement)
+        for card in cards:
+            bg_mob = card[0]  # RoundedRectangle
+            self.play(
+                Indicate(bg_mob, scale_factor=1.04,
+                         color=bg_mob.get_stroke_color()),
+                run_time=0.30,
+            )
 
         self.wait(3.0)
 
