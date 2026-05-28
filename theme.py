@@ -21,7 +21,8 @@ PURPLE    = "#A855F7"
 WHITE_TXT = "#F4F6FA"
 GREY      = "#EFEFEF"
 DARK_BOX  = "#002B52"
-FONT      = "DejaVu Sans"
+FONT      = "Nunito"
+FONT_TITLE = "Montserrat"   # titres (section_title, headers)
 MONO      = "DejaVu Sans Mono"
 
 # ============================================================
@@ -50,12 +51,12 @@ def TM(s, **kw):
 
 
 def section_title(txt: str, font_size: int = 42) -> VGroup:
-    """Titre de section avec barre rouge à gauche (style Hi! PARIS)."""
     bar = Rectangle(
         width=0.10, height=0.70,
         fill_color=RED, fill_opacity=1, stroke_width=0,
     )
-    label = T(txt, font_size=font_size, color=WHITE_TXT, weight=BOLD)
+    label = Text(txt, font=FONT_TITLE, font_size=font_size,
+                 color=WHITE_TXT, weight=BOLD)
     return VGroup(bar, label).arrange(RIGHT, buff=0.22, aligned_edge=LEFT)
 
 
