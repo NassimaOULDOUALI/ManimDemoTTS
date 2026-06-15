@@ -140,10 +140,15 @@ def glow_flash(obj, color=RED, n=12, radius=0.35, length=0.20) -> Flash:
 
 
 def load_img(stem: str) -> ImageMobject:
-    for ext in (".png", ".jpg", ".jpeg"):
-        p = ASSETS / f"{stem}{ext}"
-        if p.exists():
-            return ImageMobject(str(p))
+    """Charge assets/<stem>.<ext> — insensible à la casse du nom ET de l'extension
+    (.png/.PNG/.jpg/.JPG/.jpeg/.webp). Évite les surprises sous WSL/Windows."""
+    valid_ext = {".png", ".jpg", ".jpeg", ".webp"}
+    if ASSETS.exists():
+        for p in sorted(ASSETS.iterdir()):
+            if (p.is_file()
+                    and p.stem.lower() == stem.lower()
+                    and p.suffix.lower() in valid_ext):
+                return ImageMobject(str(p))
     raise FileNotFoundError(f"Image '{stem}' not found in assets/")
 
 
