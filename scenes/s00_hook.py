@@ -154,11 +154,17 @@ class SceneHook(Scene):
         self.play(title.animate.scale(1 / 1.06).set_stroke(width=0),
                   run_time=0.35)
 
+        # ── Tagline FR (accroche grand public, ancrage "techno française") ──
+        tagline = T("Quand l'IA apprend à intoner le français",
+                    font_size=28, color=CYAN, slant=ITALIC)
+        tagline.next_to(title, DOWN, buff=0.34)
+        self.play(FadeIn(tagline, shift=UP * 0.12), run_time=0.6)
+
         # ------------------------------------------------------------------
         # 5. Badge conférence + auteurs condensés
         # ------------------------------------------------------------------
         badge = T("ICNLSP 2025", font_size=28, color=GOLD, weight=BOLD)
-        badge.next_to(title, DOWN, buff=0.38)
+        badge.next_to(tagline, DOWN, buff=0.32)
 
         authors = T(
             "N. Ould Ouali · A.H. Sani · R. Bueno · J. Dauvet · T.L. Horstmann · E. Moulines",
@@ -193,7 +199,7 @@ class SceneHook(Scene):
         # 6. Sortie — tout fond sauf les ondes (transition vers s01)
         # ------------------------------------------------------------------
         self.play(
-            FadeOut(VGroup(badge, authors, affil)),
+            FadeOut(VGroup(badge, authors, affil, tagline)),
             run_time=0.8,
         )
         self.play(FadeOut(title), FadeOut(waves), run_time=1.2)
