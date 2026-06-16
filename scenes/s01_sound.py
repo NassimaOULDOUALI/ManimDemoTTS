@@ -1,5 +1,5 @@
 """
-s01_sound.py — Scène 1 : C'est quoi le son ? (~35s)
+s01_sound.py — Scène 1 : C'est quoi le son ? (~30s)
 =====================================================
 Niveau : zéro (grand public, VivaTech)
 Concept : pression d'air → waveform → amplitude → fréquence
@@ -9,6 +9,7 @@ Effets :
   - Waveform qui se dessine en live (Create)
   - Zoom sur une période → définition fréquence
   - Comparaison grave / aigu (deux courbes côte à côte)
+  - Bridge final vers s02 (parole humaine)
 """
 
 from manim import *
@@ -24,7 +25,7 @@ class SceneSound(Scene):
         # ==============================================================
         # TITRE
         # ==============================================================
-        title = section_title("What is Sound ?").to_edge(UP, buff=0.5)
+        title = section_title("What is Sound?").to_edge(UP, buff=0.5)
         self.play(FadeIn(title, shift=DOWN * 0.2), run_time=0.8)
 
         # ==============================================================
@@ -50,9 +51,23 @@ class SceneSound(Scene):
 
         molecules.shift(DOWN * 0.5)
         self.play(FadeIn(molecules, lag_ratio=0.02), run_time=1.0)
+        self.wait(0.2)
+
+        # Contexte AVANT animation : source → oreille (sinon la vague n'a pas de sens)
+        src_lbl = T("Source", font_size=20, color=GOLD)
+        ear_lbl = T("Ear", font_size=20, color=GOLD)
+        src_lbl.next_to(molecules, LEFT, buff=0.3)
+        ear_lbl.next_to(molecules, RIGHT, buff=0.3)
+        arr_sound = Arrow(src_lbl.get_right() + RIGHT * 0.1,
+                          ear_lbl.get_left() - RIGHT * 0.1,
+                          color=GOLD, stroke_width=3, tip_length=0.22)
+        arr_sound.next_to(molecules, DOWN, buff=0.3)
+
+        self.play(FadeIn(src_lbl), FadeIn(ear_lbl), GrowArrow(arr_sound), run_time=0.8)
         self.wait(0.3)
 
         # Animation vibration : vague de compression se propage de gauche à droite
+        # (maintenant pédagogiquement orientée : Source → Ear)
         for wave_pass in range(2):
             anims = []
             for i, mol in enumerate(molecules):
@@ -71,19 +86,6 @@ class SceneSound(Scene):
                 )
             self.play(*anims, run_time=1.4)
 
-        self.wait(0.4)
-
-        # Flèche "sound source → ear"
-        src_lbl = T("Source", font_size=20, color=GOLD)
-        ear_lbl = T("Ear", font_size=20, color=GOLD)
-        src_lbl.next_to(molecules, LEFT, buff=0.3)
-        ear_lbl.next_to(molecules, RIGHT, buff=0.3)
-        arr_sound = Arrow(src_lbl.get_right() + RIGHT * 0.1,
-                          ear_lbl.get_left() - RIGHT * 0.1,
-                          color=GOLD, stroke_width=3, tip_length=0.22)
-        arr_sound.next_to(molecules, DOWN, buff=0.3)
-
-        self.play(FadeIn(src_lbl), FadeIn(ear_lbl), GrowArrow(arr_sound), run_time=0.8)
         self.wait(0.5)
 
         # Transition : on efface les molécules, on garde le titre
@@ -109,7 +111,12 @@ class SceneSound(Scene):
 
         self.play(Create(ax), FadeIn(x_lbl), FadeIn(y_lbl), run_time=0.7)
 
-        wave_graph = ax.plot(speech_signal_func, x_range=[0, 1, 0.001],
+        # Signal acoustique générique (note frappée amortie) — PAS speech_signal_func
+        # On n'a pas encore introduit la parole : un signal type "diapason" est plus juste ici.
+        def generic_sound(t):
+            return 0.85 * np.exp(-1.8 * t) * np.sin(2 * np.pi * 8 * t)
+
+        wave_graph = ax.plot(generic_sound, x_range=[0, 1, 0.001],
                              color=CYAN, stroke_width=2.5)
 
         # Dessin progressif — l'effet clé
@@ -193,11 +200,22 @@ class SceneSound(Scene):
                                color=WHITE_TXT)
         freq_formula.to_edge(DOWN, buff=0.4)
         self.play(Write(freq_formula), run_time=0.8)
-        self.wait(4.0)
+        # Punch visuel : la formule s'illumine brièvement (rythme dans la scène)
+        self.play(glow_flash(freq_formula, color=GOLD, n=12, radius=0.40),
+                  run_time=0.6)
+        self.wait(2.5)
+
+        # Bridge vers s02 : cliffhanger pédagogique. La parole humaine est
+        # bien plus complexe qu'une sinusoïde — c'est l'objet de la prochaine scène.
+        bridge = T("...but human speech is far more complex than a single sine wave",
+                   font_size=22, color=CYAN, slant=ITALIC)
+        bridge.next_to(freq_formula, UP, buff=0.30)
+        self.play(FadeIn(bridge, shift=UP * 0.08), run_time=0.7)
+        self.wait(2.0)
 
         self.play(
             FadeOut(VGroup(title, subtitle3, ax_low, ax_high, wave_low, wave_high,
                            lbl_low, lbl_high, period_brace_low, period_lbl_low,
-                           period_brace_high, period_lbl_high, freq_formula)),
+                           period_brace_high, period_lbl_high, freq_formula, bridge)),
             run_time=1.0,
         )

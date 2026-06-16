@@ -21,7 +21,8 @@ PURPLE    = "#A855F7"
 WHITE_TXT = "#F4F6FA"
 GREY      = "#EFEFEF"
 DARK_BOX  = "#002B52"
-FONT      = "DejaVu Sans"
+FONT      = "Nunito"
+FONT_TITLE = "Montserrat"   # titres (section_title, headers)
 MONO      = "DejaVu Sans Mono"
 
 # ============================================================
@@ -50,12 +51,12 @@ def TM(s, **kw):
 
 
 def section_title(txt: str, font_size: int = 42) -> VGroup:
-    """Titre de section avec barre rouge à gauche (style Hi! PARIS)."""
     bar = Rectangle(
         width=0.10, height=0.70,
         fill_color=RED, fill_opacity=1, stroke_width=0,
     )
-    label = T(txt, font_size=font_size, color=WHITE_TXT, weight=BOLD)
+    label = Text(txt, font=FONT_TITLE, font_size=font_size,
+                 color=WHITE_TXT, weight=BOLD)
     return VGroup(bar, label).arrange(RIGHT, buff=0.22, aligned_edge=LEFT)
 
 
@@ -139,10 +140,15 @@ def glow_flash(obj, color=RED, n=12, radius=0.35, length=0.20) -> Flash:
 
 
 def load_img(stem: str) -> ImageMobject:
-    for ext in (".png", ".jpg", ".jpeg"):
-        p = ASSETS / f"{stem}{ext}"
-        if p.exists():
-            return ImageMobject(str(p))
+    """Charge assets/<stem>.<ext> — insensible à la casse du nom ET de l'extension
+    (.png/.PNG/.jpg/.JPG/.jpeg/.webp). Évite les surprises sous WSL/Windows."""
+    valid_ext = {".png", ".jpg", ".jpeg", ".webp"}
+    if ASSETS.exists():
+        for p in sorted(ASSETS.iterdir()):
+            if (p.is_file()
+                    and p.stem.lower() == stem.lower()
+                    and p.suffix.lower() in valid_ext):
+                return ImageMobject(str(p))
     raise FileNotFoundError(f"Image '{stem}' not found in assets/")
 
 
